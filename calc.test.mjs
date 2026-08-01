@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { calculate } from './calc.mjs';
+import { calculate } from './calc.js';
 
 function findRow(result, key) {
   const row = result.rows.find((r) => r.key === key);

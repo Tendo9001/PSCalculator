@@ -1,3 +1,5 @@
+'use strict';
+
 const CONSTANTS = {
   takaful: 1,
   sjRatio: 0.4,
@@ -25,7 +27,7 @@ const ROOT_CAUSE_ORDER = [
   },
 ];
 
-export function calculate({ principal, monthlyRate, period, costOfFund }) {
+function calculate({ principal, monthlyRate, period, costOfFund }) {
   const annualRate = monthlyRate * period;
   const balanceInterest = annualRate - costOfFund;
   const afterTakaful = balanceInterest - CONSTANTS.takaful;
@@ -72,4 +74,8 @@ export function calculate({ principal, monthlyRate, period, costOfFund }) {
   }
 
   return { rows, rootCauseKey, rootCauseMessage };
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { calculate };
 }
