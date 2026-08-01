@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profit Split Calculator</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="app">
+    <h1 class="app__title">Profit Split Calculator</h1>
+
+    <section class="card card--inputs">
+      <div class="field">
+        <label for="principal">Principal (RM)</label>
+        <input type="number" id="principal" inputmode="decimal" step="any" placeholder="0.00" />
+      </div>
+      <div class="field">
+        <label for="monthlyRate">Monthly Rate (%)</label>
+        <input type="number" id="monthlyRate" inputmode="decimal" step="any" placeholder="0.00" />
+      </div>
+      <div class="field">
+        <label for="period">Period (months)</label>
+        <input type="number" id="period" inputmode="decimal" step="any" placeholder="0" />
+      </div>
+      <div class="field">
+        <label for="costOfFund">Cost of Fund (%)</label>
+        <input type="number" id="costOfFund" inputmode="decimal" step="any" placeholder="0.00" />
+      </div>
+    </section>
+
+    <section class="card card--breakdown">
+      <h2 class="card__heading">Breakdown</h2>
+      <div class="breakdown" id="breakdown"></div>
+    </section>
+
+    <section class="card card--result" id="resultCard">
+      <span class="result__label">Monthly Payout</span>
+      <span class="result__value" id="monthlyPayoutValue">RM 0.00</span>
+    </section>
+  </main>
+
+  <div class="modal-overlay" id="modalOverlay" hidden>
+    <div class="modal" role="alertdialog" aria-live="assertive">
+      <h3 class="modal__title">Check your numbers</h3>
+      <p class="modal__message" id="modalMessage"></p>
+      <button type="button" class="modal__close" id="modalClose">Close</button>
+    </div>
+  </div>
+
+  <script type="module" src="script.js"></script>
+</body>
+</html>
