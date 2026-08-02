@@ -25,14 +25,20 @@ const ROOT_CAUSE_ORDER = [
     key: 'afterTakaful',
     message: 'Balance Interest is too low to cover the After Takaful deduction, causing it to go negative.',
   },
+  {
+    key: 'pat',
+    message: 'Tax Rate is high enough to make Profit After Tax negative even though After Takaful is positive.',
+  },
 ];
 
-function calculate({ principal, monthlyRate, period, costOfFund }) {
+function calculate({ principal, monthlyRate, period, costOfFund, taxRate }) {
   const annualRate = monthlyRate * period;
   const balanceInterest = annualRate - costOfFund;
   const afterTakaful = balanceInterest - CONSTANTS.takaful;
-  const investorReturn = afterTakaful * CONSTANTS.investorSplit;
-  const teamAReturn = afterTakaful - investorReturn;
+  const tax = afterTakaful * (taxRate / 100);
+  const pat = afterTakaful - tax;
+  const investorReturn = pat * CONSTANTS.investorSplit;
+  const teamAReturn = pat - investorReturn;
   const teamAInterest = teamAReturn * CONSTANTS.sjRatio;
   const teamBInterest = teamAReturn * CONSTANTS.myRatio;
   const teamBAmount = principal * (teamBInterest / 100);
@@ -43,6 +49,8 @@ function calculate({ principal, monthlyRate, period, costOfFund }) {
     { key: 'annualRate', label: 'Annual Rate', ratio: annualRate },
     { key: 'balanceInterest', label: 'Balance Interest', ratio: balanceInterest },
     { key: 'afterTakaful', label: 'After Takaful', ratio: afterTakaful },
+    { key: 'tax', label: 'Tax', ratio: tax },
+    { key: 'pat', label: 'Profit After Tax', ratio: pat },
     { key: 'investorReturn', label: 'Investor Return', ratio: investorReturn },
     { key: 'teamAReturn', label: 'SJ-Team Return', ratio: teamAReturn },
     { key: 'teamAInterest', label: 'SJ-Team Interest', ratio: teamAInterest },

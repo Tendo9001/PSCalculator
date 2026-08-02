@@ -1,4 +1,4 @@
-const inputIds = ['principal', 'monthlyRate', 'period', 'costOfFund'];
+const inputIds = ['principal', 'monthlyRate', 'period', 'costOfFund', 'taxRate'];
 const inputs = Object.fromEntries(inputIds.map((id) => [id, document.getElementById(id)]));
 const breakdownEl = document.getElementById('breakdown');
 const resultCardEl = document.getElementById('resultCard');
