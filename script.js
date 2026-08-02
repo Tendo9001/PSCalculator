@@ -54,10 +54,84 @@ function closeModal() {
 function readInputs() {
   const values = {};
   for (const id of inputIds) {
-    const raw = inputs[id].value;
+    const raw = inputs[id].value.replace(/,/g, '');
     values[id] = raw === '' ? 0 : Number(raw);
   }
   return values;
+}
+
+function sanitizePrincipalRaw(raw) {
+  let seenDot = false;
+  let result = '';
+  for (const ch of raw) {
+    if (ch >= '0' && ch <= '9') {
+      result += ch;
+    } else if (ch === '.' && !seenDot) {
+      result += ch;
+      seenDot = true;
+    }
+  }
+  return result;
+}
+
+function addThousandsSeparators(intDigits) {
+  const stripped = intDigits.replace(/^0+(?=\d)/, '');
+  return stripped.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+function formatPrincipalLive(raw, cursorPos) {
+  // Count digits + decimal point (the characters we never delete) before the
+  // cursor, so the cursor lands after the digit/dot the user just typed,
+  // not just after the same *count* of digits alone.
+  const before = raw.slice(0, cursorPos);
+  let meaningfulBeforeCursor = 0;
+  let dotSeenInBefore = false;
+  for (const ch of before) {
+    if (ch >= '0' && ch <= '9') {
+      meaningfulBeforeCursor++;
+    } else if (ch === '.' && !dotSeenInBefore) {
+      meaningfulBeforeCursor++;
+      dotSeenInBefore = true;
+    }
+  }
+
+  const sanitized = sanitizePrincipalRaw(raw);
+  const dotIndex = sanitized.indexOf('.');
+  const intDigits = dotIndex === -1 ? sanitized : sanitized.slice(0, dotIndex);
+  const decDigits = dotIndex === -1 ? '' : sanitized.slice(dotIndex + 1);
+
+  const formattedInt = addThousandsSeparators(intDigits);
+  const formattedValue = dotIndex === -1 ? formattedInt : `${formattedInt}.${decDigits}`;
+
+  let count = 0;
+  let newPos = formattedValue.length;
+  if (meaningfulBeforeCursor === 0) {
+    newPos = 0;
+  } else {
+    for (let i = 0; i < formattedValue.length; i++) {
+      if (formattedValue[i] !== ',') {
+        count++;
+        if (count === meaningfulBeforeCursor) {
+          newPos = i + 1;
+          break;
+        }
+      }
+    }
+  }
+
+  return { formattedValue, newPos };
+}
+
+function formatPrincipalOnBlur(raw) {
+  const sanitized = sanitizePrincipalRaw(raw);
+  if (sanitized === '' || sanitized === '.') {
+    return '';
+  }
+  const numeric = Number(sanitized);
+  if (Number.isNaN(numeric)) {
+    return '';
+  }
+  return numeric.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function recalculate() {
@@ -83,7 +157,21 @@ function recalculate() {
   lastRootCauseKey = result.rootCauseKey;
 }
 
-inputIds.forEach((id) => inputs[id].addEventListener('input', recalculate));
+inputs.principal.addEventListener('input', (event) => {
+  const el = event.target;
+  const { formattedValue, newPos } = formatPrincipalLive(el.value, el.selectionStart);
+  el.value = formattedValue;
+  el.setSelectionRange(newPos, newPos);
+  recalculate();
+});
+inputs.principal.addEventListener('blur', (event) => {
+  event.target.value = formatPrincipalOnBlur(event.target.value);
+  recalculate();
+});
+
+inputIds
+  .filter((id) => id !== 'principal')
+  .forEach((id) => inputs[id].addEventListener('input', recalculate));
 modalClose.addEventListener('click', closeModal);
 modalOverlay.addEventListener('click', (event) => {
   if (event.target === modalOverlay) {
