@@ -115,6 +115,10 @@ body {
   border-color: var(--accent);
 }
 
+.breakdown[hidden] {
+  display: none;
+}
+
 .breakdown-row {
   display: flex;
   justify-content: space-between;

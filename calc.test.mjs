@@ -27,6 +27,10 @@ test('all-positive chain: investor side reduced by tax, MY-Team side untouched',
   assert.equal(findRow(result, 'monthlyPayout').amount, 350);
 
   assert.equal(result.rootCause, null);
+
+  assert.deepEqual(result.shared.map((r) => r.key), ['annualRate', 'balanceInterest', 'afterTakaful']);
+  assert.deepEqual(result.myTeam.map((r) => r.key), ['teamAReturn', 'teamAInterest', 'teamBInterest', 'teamBAmount', 'perHeadAmount', 'monthlyPayout']);
+  assert.deepEqual(result.investor.map((r) => r.key), ['investorReturnGross', 'tax', 'investorReturnNet']);
 });
 
 test('MY-Team side is identical regardless of tax rate', () => {

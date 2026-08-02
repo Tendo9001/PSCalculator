@@ -235,4 +235,5 @@ modalOverlay.addEventListener('click', (event) => {
   }
 });
 
+setActiveTab('myTeam');
 recalculate();
