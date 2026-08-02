@@ -50,7 +50,7 @@ function calculate({ principal, monthlyRate, period, costOfFund, taxRate }) {
 
   const investorReturnGross = afterTakaful * CONSTANTS.investorSplit;
   const teamAReturn = afterTakaful - investorReturnGross;
-  const tax = investorReturnGross * (taxRate / 100);
+  const tax = afterTakaful * (taxRate / 100);
   const investorReturnNet = investorReturnGross - tax;
 
   const teamAInterest = teamAReturn * CONSTANTS.sjRatio;

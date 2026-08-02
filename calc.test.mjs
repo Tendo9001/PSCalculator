@@ -16,8 +16,8 @@ test('all-positive chain: investor side reduced by tax, MY-Team side untouched',
   assert.equal(findRow(result, 'afterTakaful').ratio, 56);
 
   assert.equal(findRow(result, 'investorReturnGross').ratio, 28);
-  assert.equal(findRow(result, 'tax').ratio, 5.6);
-  assert.equal(findRow(result, 'investorReturnNet').ratio, 22.4);
+  assert.equal(findRow(result, 'tax').ratio, 11.2);
+  assert.equal(findRow(result, 'investorReturnNet').ratio, 16.8);
 
   assert.equal(findRow(result, 'teamAReturn').ratio, 28);
   assert.equal(findRow(result, 'teamAInterest').ratio, 11.2);
@@ -73,14 +73,14 @@ test('a small positive balance that cannot cover Takaful flags afterTakaful as a
   assert.equal(result.rootCause.scope, 'shared');
 });
 
-test('a tax rate over 100% flags investorReturnNet as an investor-only root cause, leaving MY-Team positive', () => {
-  const result = calculate({ principal: 100000, monthlyRate: 5, period: 12, costOfFund: 3, taxRate: 150 });
+test('a tax rate over 50% flags investorReturnNet as an investor-only root cause, leaving MY-Team positive', () => {
+  const result = calculate({ principal: 100000, monthlyRate: 5, period: 12, costOfFund: 3, taxRate: 60 });
 
   assert.equal(findRow(result, 'afterTakaful').ratio, 56);
   assert.equal(findRow(result, 'investorReturnGross').ratio, 28);
   assert.equal(findRow(result, 'investorReturnGross').negative, false);
-  assert.equal(findRow(result, 'tax').ratio, 42);
-  assert.equal(findRow(result, 'investorReturnNet').ratio, -14);
+  assert.equal(findRow(result, 'tax').ratio, 33.6);
+  assert.equal(findRow(result, 'investorReturnNet').ratio, -5.6);
   assert.equal(findRow(result, 'investorReturnNet').negative, true);
 
   assert.equal(findRow(result, 'teamAReturn').ratio, 28);
