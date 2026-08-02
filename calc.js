@@ -44,9 +44,9 @@ function calculate({ principal, monthlyRate, period, costOfFund }) {
     { key: 'balanceInterest', label: 'Balance Interest', ratio: balanceInterest },
     { key: 'afterTakaful', label: 'After Takaful', ratio: afterTakaful },
     { key: 'investorReturn', label: 'Investor Return', ratio: investorReturn },
-    { key: 'teamAReturn', label: 'Team A Return', ratio: teamAReturn },
-    { key: 'teamAInterest', label: 'Team A Interest', ratio: teamAInterest },
-    { key: 'teamBInterest', label: 'Team B Interest', ratio: teamBInterest },
+    { key: 'teamAReturn', label: 'SJ-Team Return', ratio: teamAReturn },
+    { key: 'teamAInterest', label: 'SJ-Team Interest', ratio: teamAInterest },
+    { key: 'teamBInterest', label: 'MY Interest', ratio: teamBInterest },
   ].map((row) => ({
     ...row,
     ratio: round(row.ratio),
@@ -56,8 +56,8 @@ function calculate({ principal, monthlyRate, period, costOfFund }) {
 
   const amountRows = [
     { key: 'teamBAmount', label: 'Team B Amount', amount: round(teamBAmount) },
-    { key: 'perHeadAmount', label: 'Per-Head Amount', amount: round(perHeadAmount) },
-    { key: 'monthlyPayout', label: 'Monthly Payout', amount: round(monthlyPayout) },
+    { key: 'perHeadAmount', label: 'MY Team', amount: round(perHeadAmount) },
+    { key: 'monthlyPayout', label: 'MY Team Monthly Payout', amount: round(monthlyPayout) },
   ].map((row) => ({ ...row, negative: row.amount < 0 }));
 
   const rows = [...ratioRows, ...amountRows];

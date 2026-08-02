@@ -21,9 +21,14 @@ function formatPercent(ratio) {
   return `${ratio.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
 }
 
+const HIDDEN_ROW_KEYS = new Set(['teamBAmount']);
+
 function renderRows(rows) {
   breakdownEl.innerHTML = '';
   for (const row of rows) {
+    if (HIDDEN_ROW_KEYS.has(row.key)) {
+      continue;
+    }
     const rowEl = document.createElement('div');
     rowEl.className = 'breakdown-row' + (row.negative ? ' breakdown-row--negative' : '');
 
