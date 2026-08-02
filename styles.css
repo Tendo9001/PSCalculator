@@ -49,6 +49,35 @@ body {
   color: var(--text-dim);
 }
 
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin: 4px 0 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tab {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 10px 4px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.tab:hover {
+  color: var(--text);
+}
+
+.tab--active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
 .card--inputs {
   display: grid;
   grid-template-columns: 1fr 1fr;

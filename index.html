@@ -38,12 +38,20 @@
 
     <section class="card card--breakdown">
       <h2 class="card__heading">Breakdown</h2>
-      <div class="breakdown" id="breakdown"></div>
+      <div class="breakdown" id="sharedBreakdown"></div>
+
+      <div class="tabs" role="tablist">
+        <button type="button" class="tab tab--active" id="tabMyTeam" role="tab" aria-selected="true">MY Team</button>
+        <button type="button" class="tab" id="tabInvestor" role="tab" aria-selected="false">Investor</button>
+      </div>
+
+      <div class="breakdown" id="myTeamBreakdown"></div>
+      <div class="breakdown" id="investorBreakdown" hidden></div>
     </section>
 
     <section class="card card--result" id="resultCard">
-      <span class="result__label">MY Team Monthly Payout</span>
-      <span class="result__value" id="monthlyPayoutValue">RM 0.00</span>
+      <span class="result__label" id="resultLabel">MY Team Monthly Payout</span>
+      <span class="result__value" id="resultValue">RM 0.00</span>
     </section>
   </main>
 
