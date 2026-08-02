@@ -1,13 +1,22 @@
 const inputIds = ['principal', 'monthlyRate', 'period', 'costOfFund', 'taxRate'];
 const inputs = Object.fromEntries(inputIds.map((id) => [id, document.getElementById(id)]));
-const breakdownEl = document.getElementById('breakdown');
+const sharedBreakdownEl = document.getElementById('sharedBreakdown');
+const myTeamBreakdownEl = document.getElementById('myTeamBreakdown');
+const investorBreakdownEl = document.getElementById('investorBreakdown');
+const tabMyTeamEl = document.getElementById('tabMyTeam');
+const tabInvestorEl = document.getElementById('tabInvestor');
 const resultCardEl = document.getElementById('resultCard');
-const monthlyPayoutEl = document.getElementById('monthlyPayoutValue');
+const resultLabelEl = document.getElementById('resultLabel');
+const resultValueEl = document.getElementById('resultValue');
 const modalOverlay = document.getElementById('modalOverlay');
 const modalMessage = document.getElementById('modalMessage');
 const modalClose = document.getElementById('modalClose');
 
-let lastRootCauseKey = null;
+const HIDDEN_ROW_KEYS = new Set(['teamBAmount']);
+
+let activeTab = 'myTeam';
+let lastResult = null;
+let shownRootCauseKey = null;
 
 function formatRM(amount) {
   const formatted = amount.toLocaleString('en-US', {
@@ -21,10 +30,8 @@ function formatPercent(ratio) {
   return `${ratio.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
 }
 
-const HIDDEN_ROW_KEYS = new Set(['teamBAmount']);
-
-function renderRows(rows) {
-  breakdownEl.innerHTML = '';
+function renderRows(container, rows) {
+  container.innerHTML = '';
   for (const row of rows) {
     if (HIDDEN_ROW_KEYS.has(row.key)) {
       continue;
@@ -43,8 +50,20 @@ function renderRows(rows) {
       : `${formatPercent(row.ratio)} / ${formatRM(row.amount)}`;
 
     rowEl.append(labelEl, valuesEl);
-    breakdownEl.append(rowEl);
+    container.append(rowEl);
   }
+}
+
+function updateResultCard() {
+  if (!lastResult) {
+    return;
+  }
+  const row = activeTab === 'myTeam'
+    ? lastResult.myTeam.find((r) => r.key === 'monthlyPayout')
+    : lastResult.investor.find((r) => r.key === 'investorReturnNet');
+  resultLabelEl.textContent = activeTab === 'myTeam' ? 'MY Team Monthly Payout' : 'Investor Return (Net)';
+  resultValueEl.textContent = formatRM(row.amount);
+  resultCardEl.classList.toggle('card--result-negative', row.negative);
 }
 
 function openModal(message) {
@@ -56,13 +75,43 @@ function closeModal() {
   modalOverlay.hidden = true;
 }
 
-function readInputs() {
-  const values = {};
-  for (const id of inputIds) {
-    const raw = inputs[id].value.replace(/,/g, '');
-    values[id] = raw === '' ? 0 : Number(raw);
+function maybeShowModal(hasAnyInput) {
+  const rootCause = lastResult ? lastResult.rootCause : null;
+
+  if (!hasAnyInput || !rootCause) {
+    closeModal();
+    shownRootCauseKey = null;
+    return;
   }
-  return values;
+
+  const isRelevantNow = rootCause.scope === 'shared' || activeTab === 'investor';
+
+  if (!isRelevantNow) {
+    closeModal();
+    shownRootCauseKey = null;
+    return;
+  }
+
+  if (rootCause.key !== shownRootCauseKey) {
+    openModal(rootCause.message);
+    shownRootCauseKey = rootCause.key;
+  }
+}
+
+function hasAnyInputValue() {
+  return inputIds.some((id) => inputs[id].value !== '');
+}
+
+function setActiveTab(tab) {
+  activeTab = tab;
+  tabMyTeamEl.classList.toggle('tab--active', tab === 'myTeam');
+  tabInvestorEl.classList.toggle('tab--active', tab === 'investor');
+  tabMyTeamEl.setAttribute('aria-selected', String(tab === 'myTeam'));
+  tabInvestorEl.setAttribute('aria-selected', String(tab === 'investor'));
+  myTeamBreakdownEl.hidden = tab !== 'myTeam';
+  investorBreakdownEl.hidden = tab !== 'investor';
+  updateResultCard();
+  maybeShowModal(hasAnyInputValue());
 }
 
 function sanitizePrincipalRaw(raw) {
@@ -85,9 +134,6 @@ function addThousandsSeparators(intDigits) {
 }
 
 function formatPrincipalLive(raw, cursorPos) {
-  // Count digits + decimal point (the characters we never delete) before the
-  // cursor, so the cursor lands after the digit/dot the user just typed,
-  // not just after the same *count* of digits alone.
   const before = raw.slice(0, cursorPos);
   let meaningfulBeforeCursor = 0;
   let dotSeenInBefore = false;
@@ -139,27 +185,28 @@ function formatPrincipalOnBlur(raw) {
   return numeric.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+function readInputs() {
+  const values = {};
+  for (const id of inputIds) {
+    const raw = inputs[id].value.replace(/,/g, '');
+    values[id] = raw === '' ? 0 : Number(raw);
+  }
+  return values;
+}
+
 function recalculate() {
   const values = readInputs();
   if (Object.values(values).some((v) => Number.isNaN(v))) {
     return;
   }
 
-  const result = calculate(values);
-  renderRows(result.rows);
+  lastResult = calculate(values);
 
-  const payoutRow = result.rows.find((row) => row.key === 'monthlyPayout');
-  monthlyPayoutEl.textContent = formatRM(payoutRow.amount);
-  resultCardEl.classList.toggle('card--result-negative', payoutRow.negative);
-
-  const hasAnyInput = inputIds.some((id) => inputs[id].value !== '');
-
-  if (hasAnyInput && result.rootCauseKey && result.rootCauseKey !== lastRootCauseKey) {
-    openModal(result.rootCauseMessage);
-  } else if (!hasAnyInput || !result.rootCauseKey) {
-    closeModal();
-  }
-  lastRootCauseKey = result.rootCauseKey;
+  renderRows(sharedBreakdownEl, lastResult.shared);
+  renderRows(myTeamBreakdownEl, lastResult.myTeam);
+  renderRows(investorBreakdownEl, lastResult.investor);
+  updateResultCard();
+  maybeShowModal(hasAnyInputValue());
 }
 
 inputs.principal.addEventListener('input', (event) => {
@@ -177,6 +224,10 @@ inputs.principal.addEventListener('blur', (event) => {
 inputIds
   .filter((id) => id !== 'principal')
   .forEach((id) => inputs[id].addEventListener('input', recalculate));
+
+tabMyTeamEl.addEventListener('click', () => setActiveTab('myTeam'));
+tabInvestorEl.addEventListener('click', () => setActiveTab('investor'));
+
 modalClose.addEventListener('click', closeModal);
 modalOverlay.addEventListener('click', (event) => {
   if (event.target === modalOverlay) {
