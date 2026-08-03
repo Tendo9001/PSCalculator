@@ -84,14 +84,17 @@ function calculate({
   ];
 
   const joTeamAmount = rows.find((r) => r.key === 'joTeam').amount;
-  const joMemberYearly = joTeamAmount / CONSTANTS.myTeamCount;
+  // "JO Member (after plug)" (joTeamAmount / myTeamCount) is intentionally left out of
+  // the Payout Summary for now — the owner asked to drop it (2026-08-05) but may want it
+  // back later. Uncomment the line below (and its payoutSummary entry) to restore it.
+  // const joMemberYearly = joTeamAmount / CONSTANTS.myTeamCount;
 
   const payoutSummary = [
     toPayoutRow('investor', 'Investor', rows.find((r) => r.key === 'investorReturnNet').amount),
     toPayoutRow('sj', 'SJ', rows.find((r) => r.key === 'sjTeamReturn').amount),
     toPayoutRow('sjMember', 'SJ Member', rows.find((r) => r.key === 'sjInterest').amount),
     toPayoutRow('jo', 'JO', joTeamAmount),
-    toPayoutRow('joMember', 'JO Member (after plug)', joMemberYearly),
+    // toPayoutRow('joMember', 'JO Member (after plug)', joMemberYearly),
   ];
 
   let rootCause = null;

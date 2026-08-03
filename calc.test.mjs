@@ -40,10 +40,10 @@ test('all-positive chain at default rates matches the pre-adjustable-rates numbe
   assert.equal(findSummary(result, 'sj').yearly, 28000);
   assert.equal(findSummary(result, 'sjMember').yearly, 11200);
   assert.equal(findSummary(result, 'jo').yearly, 16800);
-  assert.equal(findSummary(result, 'joMember').yearly, 4200);
-  assert.equal(findSummary(result, 'joMember').monthly, 350);
 
-  assert.deepEqual(result.payoutSummary.map((r) => r.key), ['investor', 'sj', 'sjMember', 'jo', 'joMember']);
+  // "JO Member (after plug)" is intentionally left out of payoutSummary for now (see
+  // calc.js) — the owner asked to drop it from display but may want it back later.
+  assert.deepEqual(result.payoutSummary.map((r) => r.key), ['investor', 'sj', 'sjMember', 'jo']);
 
   assert.deepEqual(result.rows.map((r) => r.label), [
     'Annual Rate', 'Balance Interest', 'After Insurance',
@@ -51,7 +51,7 @@ test('all-positive chain at default rates matches the pre-adjustable-rates numbe
     'SJ Interest', 'JO Team',
   ]);
   assert.deepEqual(result.payoutSummary.map((r) => r.label), [
-    'Investor', 'SJ', 'SJ Member', 'JO', 'JO Member (after plug)',
+    'Investor', 'SJ', 'SJ Member', 'JO',
   ]);
 
   assert.equal(result.rootCause, null);

@@ -167,6 +167,15 @@ Changes, via a written spec → plan → Subagent-Driven Development execution
   `calc.test.mjs` (only key order was tested before, not the actual label
   text, even though relabeling was half the point of this change).
 
+**Follow-up correction (2026-08-05):** the owner clarified "JO Member
+(after plug)" was never actually wanted in the Payout Summary — it had been
+part of an earlier iteration and got carried into this design by mistake.
+Rather than deleting it outright, the row (and its `joMemberYearly`
+calculation) were commented out in `calc.js` with a note explaining why,
+since the owner said they may want it back later. `calc.test.mjs`'s
+key/label assertions were updated to expect 4 payout summary rows instead
+of 5.
+
 ## Standing safety note
 
 During development, a headless-Chrome verification step once ran
