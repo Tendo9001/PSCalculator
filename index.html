@@ -53,6 +53,10 @@
       </div>
     </section>
 
+    <div class="warning-banner" id="warningBanner" hidden>
+      <p id="warningMessage"></p>
+    </div>
+
     <section class="card card--breakdown">
       <h2 class="card__heading">Breakdown</h2>
       <div class="breakdown" id="breakdown"></div>
@@ -72,14 +76,6 @@
       </table>
     </section>
   </main>
-
-  <div class="modal-overlay" id="modalOverlay" hidden>
-    <div class="modal" role="alertdialog" aria-live="assertive">
-      <h3 class="modal__title">Check your numbers</h3>
-      <p class="modal__message" id="modalMessage"></p>
-      <button type="button" class="modal__close" id="modalClose">Close</button>
-    </div>
-  </div>
 
   <script src="calc.js"></script>
   <script src="script.js"></script>

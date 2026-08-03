@@ -11,11 +11,15 @@ const inputIds = [
 const inputs = Object.fromEntries(inputIds.map((id) => [id, document.getElementById(id)]));
 const breakdownEl = document.getElementById('breakdown');
 const summaryBodyEl = document.getElementById('summaryBody');
-const modalOverlay = document.getElementById('modalOverlay');
-const modalMessage = document.getElementById('modalMessage');
-const modalClose = document.getElementById('modalClose');
+const warningBannerEl = document.getElementById('warningBanner');
+const warningMessageEl = document.getElementById('warningMessage');
 
-let shownRootCauseKey = null;
+const DEAL_TERM_IDS = ['principal', 'monthlyRate', 'period', 'costOfFund'];
+const RATE_LABELS = {
+  insuranceRate: 'Insurance Rate',
+  investorReturnRate: 'Investor Return',
+  joRate: 'JO Rate',
+};
 
 function formatRM(amount) {
   const formatted = amount.toLocaleString('en-US', {
@@ -68,17 +72,32 @@ function renderSummary(payoutSummary) {
   }
 }
 
-function openModal(message) {
-  modalMessage.textContent = message;
-  modalOverlay.hidden = false;
+function showWarning(message) {
+  warningMessageEl.textContent = message;
+  warningBannerEl.hidden = false;
 }
 
-function closeModal() {
-  modalOverlay.hidden = true;
+function hideWarning() {
+  warningBannerEl.hidden = true;
 }
 
 function hasAnyInputValue() {
   return inputIds.some((id) => inputs[id].value !== '');
+}
+
+function getMissingRateWarning() {
+  const hasStartedDealTerms = DEAL_TERM_IDS.some((id) => inputs[id].value !== '');
+  if (!hasStartedDealTerms) {
+    return null;
+  }
+
+  const missingLabels = Object.keys(RATE_LABELS).filter((id) => inputs[id].value === '').map((id) => RATE_LABELS[id]);
+  if (missingLabels.length === 0) {
+    return null;
+  }
+
+  const subject = missingLabels.length > 1 ? 'they are' : 'it is';
+  return `Fill in ${missingLabels.join(', ')} to get an accurate result — until then ${subject} treated as 0%.`;
 }
 
 function sanitizePrincipalRaw(raw) {
@@ -171,14 +190,15 @@ function recalculate() {
   renderRows(result.rows);
   renderSummary(result.payoutSummary);
 
+  const missingRateWarning = getMissingRateWarning();
   const hasAnyInput = hasAnyInputValue();
 
-  if (!hasAnyInput || !result.rootCause) {
-    closeModal();
-    shownRootCauseKey = null;
-  } else if (result.rootCause.key !== shownRootCauseKey) {
-    openModal(result.rootCause.message);
-    shownRootCauseKey = result.rootCause.key;
+  if (missingRateWarning) {
+    showWarning(missingRateWarning);
+  } else if (hasAnyInput && result.rootCause) {
+    showWarning(result.rootCause.message);
+  } else {
+    hideWarning();
   }
 }
 
@@ -197,12 +217,5 @@ inputs.principal.addEventListener('blur', (event) => {
 inputIds
   .filter((id) => id !== 'principal')
   .forEach((id) => inputs[id].addEventListener('input', recalculate));
-
-modalClose.addEventListener('click', closeModal);
-modalOverlay.addEventListener('click', (event) => {
-  if (event.target === modalOverlay) {
-    closeModal();
-  }
-});
 
 recalculate();
