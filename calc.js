@@ -1,10 +1,6 @@
 'use strict';
 
 const CONSTANTS = {
-  takaful: 1,
-  sjRatio: 0.4,
-  myRatio: 0.6,
-  investorSplit: 0.5,
   myTeamCount: 4,
 };
 
@@ -23,12 +19,18 @@ function toRatioRow(key, label, ratio, principal) {
   };
 }
 
-function toAmountRow(key, label, amount) {
-  const roundedAmount = round(amount);
-  return { key, label, amount: roundedAmount, negative: roundedAmount < 0 };
+function toPayoutRow(key, label, yearlyAmount) {
+  const roundedYearly = round(yearlyAmount);
+  return {
+    key,
+    label,
+    monthly: round(roundedYearly / 12),
+    yearly: roundedYearly,
+    negative: roundedYearly < 0,
+  };
 }
 
-const SHARED_ROOT_CAUSE_ORDER = [
+const ROOT_CAUSE_ORDER = [
   {
     key: 'annualRate',
     message: 'Monthly Rate and Period combine to a negative Annual Rate. Check your inputs.',
@@ -38,69 +40,70 @@ const SHARED_ROOT_CAUSE_ORDER = [
     message: 'Cost of Fund exceeds Annual Rate, causing Balance Interest to go negative.',
   },
   {
-    key: 'afterTakaful',
-    message: 'Balance Interest is too low to cover the After Takaful deduction, causing it to go negative.',
+    key: 'afterInsurance',
+    message: 'Balance Interest is too low to cover the Insurance deduction, causing After Insurance to go negative.',
+  },
+  {
+    key: 'investorReturnNet',
+    message: 'Tax Rate is high enough to make Investor Return (Net) negative, even though Investor Return (Gross) is positive.',
   },
 ];
 
-function calculate({ principal, monthlyRate, period, costOfFund, taxRate }) {
+function calculate({
+  principal,
+  monthlyRate,
+  period,
+  costOfFund,
+  insuranceRate,
+  taxRate,
+  investorReturnRate,
+  joRate,
+}) {
   const annualRate = monthlyRate * period;
   const balanceInterest = annualRate - costOfFund;
-  const afterTakaful = balanceInterest - CONSTANTS.takaful;
+  const afterInsurance = balanceInterest - insuranceRate;
 
-  const investorReturnGross = afterTakaful * CONSTANTS.investorSplit;
-  const teamAReturn = afterTakaful - investorReturnGross;
-  const tax = afterTakaful * (taxRate / 100);
+  const investorReturnGross = afterInsurance * (investorReturnRate / 100);
+  const sjTeamReturn = afterInsurance - investorReturnGross;
+  const tax = afterInsurance * (taxRate / 100);
   const investorReturnNet = investorReturnGross - tax;
 
-  const teamAInterest = teamAReturn * CONSTANTS.sjRatio;
-  const teamBInterest = teamAReturn * CONSTANTS.myRatio;
-  const teamBAmount = principal * (teamBInterest / 100);
-  const perHeadAmount = teamBAmount / CONSTANTS.myTeamCount;
-  const monthlyPayout = perHeadAmount / 12;
+  const sjInterest = sjTeamReturn * (1 - joRate / 100);
+  const joTeam = sjTeamReturn * (joRate / 100);
 
-  const shared = [
+  const rows = [
     toRatioRow('annualRate', 'Annual Rate', annualRate, principal),
     toRatioRow('balanceInterest', 'Balance Interest', balanceInterest, principal),
-    toRatioRow('afterTakaful', 'After Takaful', afterTakaful, principal),
-  ];
-
-  const myTeam = [
-    toRatioRow('teamAReturn', 'SJ-Team Return', teamAReturn, principal),
-    toRatioRow('teamAInterest', 'SJ-Team Interest', teamAInterest, principal),
-    toRatioRow('teamBInterest', 'MY Interest', teamBInterest, principal),
-    toAmountRow('teamBAmount', 'Team B Amount', teamBAmount),
-    toAmountRow('perHeadAmount', 'MY Team', perHeadAmount),
-    toAmountRow('monthlyPayout', 'MY Team Monthly Payout', monthlyPayout),
-  ];
-
-  const investor = [
+    toRatioRow('afterInsurance', 'After Insurance', afterInsurance, principal),
     toRatioRow('investorReturnGross', 'Investor Return (Gross)', investorReturnGross, principal),
+    toRatioRow('sjTeamReturn', 'SJ Team Return', sjTeamReturn, principal),
     toRatioRow('tax', 'Tax', tax, principal),
     toRatioRow('investorReturnNet', 'Investor Return (Net)', investorReturnNet, principal),
+    toRatioRow('sjInterest', 'SJ Interest', sjInterest, principal),
+    toRatioRow('joTeam', 'JO Team', joTeam, principal),
+  ];
+
+  const joTeamAmount = rows.find((r) => r.key === 'joTeam').amount;
+  const joMemberYearly = joTeamAmount / CONSTANTS.myTeamCount;
+
+  const payoutSummary = [
+    toPayoutRow('investor', 'Investor', rows.find((r) => r.key === 'investorReturnNet').amount),
+    toPayoutRow('sj', 'SJ', rows.find((r) => r.key === 'sjTeamReturn').amount),
+    toPayoutRow('sjMember', 'SJ Member', rows.find((r) => r.key === 'sjInterest').amount),
+    toPayoutRow('jo', 'JO', joTeamAmount),
+    toPayoutRow('joMember', 'JO Member (after plug)', joMemberYearly),
   ];
 
   let rootCause = null;
-  for (const candidate of SHARED_ROOT_CAUSE_ORDER) {
-    const row = shared.find((r) => r.key === candidate.key);
+  for (const candidate of ROOT_CAUSE_ORDER) {
+    const row = rows.find((r) => r.key === candidate.key);
     if (row.negative) {
-      rootCause = { key: candidate.key, message: candidate.message, scope: 'shared' };
+      rootCause = { key: candidate.key, message: candidate.message };
       break;
     }
   }
 
-  if (!rootCause) {
-    const investorReturnNetRow = investor.find((r) => r.key === 'investorReturnNet');
-    if (investorReturnNetRow.negative) {
-      rootCause = {
-        key: 'investorReturnNet',
-        message: 'Tax Rate is high enough to make Investor Return (Net) negative, even though Investor Return (Gross) is positive.',
-        scope: 'investor',
-      };
-    }
-  }
-
-  return { shared, myTeam, investor, rootCause };
+  return { rows, payoutSummary, rootCause };
 }
 
 if (typeof module !== 'undefined' && module.exports) {
