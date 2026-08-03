@@ -96,10 +96,11 @@ views. Everything below the two input cards is one page, top to bottom:
    9. JO Team
 
    (the `joTeamAmount` row stays computed-but-hidden, same as before)
-4. **Payout Summary card** (new) — a table with two columns, Monthly
-   Payout and Yearly Payout, and five rows:
+4. **Payout Summary card** (new) — a table with two columns, "Monthly
+   Payout (PAT)" and "Yearly Payout (PAT)" (column headers kept verbatim
+   from the spreadsheet), and five rows:
 
-   | Role | Monthly Payout | Yearly Payout |
+   | Role | Monthly Payout (PAT) | Yearly Payout (PAT) |
    |---|---|---|
    | Investor | Investor Return (Net) ÷ 12 | Investor Return (Net) |
    | SJ | SJ Team Return ÷ 12 | SJ Team Return |
@@ -132,11 +133,10 @@ Row and input labels follow the spreadsheet's own wording where the
 spreadsheet states one (Title Cased for consistency with the rest of the
 UI): "Insurance Rate", "Investor Return", "JO Rate", "SJ Team Return", "SJ
 Interest", "JO Team", "Investor", "SJ", "SJ Member", "JO", "JO Member
-(after plug)". One deliberate deviation: the summary table's column headers
-are "Monthly Payout" / "Yearly Payout" **without** the spreadsheet's
-"(PAT)" suffix — since PAT is not part of this app's actual computation
-(confirmed above), keeping "(PAT)" in the header would misdescribe what the
-numbers are.
+(after plug)", and the summary table's column headers "Monthly Payout
+(PAT)" / "Yearly Payout (PAT)". The project owner confirmed keeping "(PAT)"
+verbatim even though this app's Payout Summary numbers aren't computed via
+a PAT step — it's the spreadsheet's own wording and takes precedence.
 
 ## Out of scope
 
