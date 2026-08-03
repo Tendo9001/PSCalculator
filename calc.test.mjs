@@ -16,43 +16,34 @@ function findSummary(result, key) {
 
 const DEFAULT_RATES = { insuranceRate: 1, taxRate: 20, investorReturnRate: 50, joRate: 60 };
 
-test('all-positive chain at default rates matches the pre-adjustable-rates numbers', () => {
+test('all-positive chain: PAT-based split, tax reduces everyone proportionally', () => {
   const result = calculate({ principal: 100000, monthlyRate: 5, period: 12, costOfFund: 3, ...DEFAULT_RATES });
 
   assert.equal(findRow(result, 'annualRate').ratio, 60);
   assert.equal(findRow(result, 'balanceInterest').ratio, 57);
   assert.equal(findRow(result, 'afterInsurance').ratio, 56);
-  assert.equal(findRow(result, 'investorReturnGross').ratio, 28);
-  assert.equal(findRow(result, 'sjTeamReturn').ratio, 28);
   assert.equal(findRow(result, 'tax').ratio, 11.2);
-  assert.equal(findRow(result, 'investorReturnNet').ratio, 16.8);
-  assert.equal(findRow(result, 'sjInterest').ratio, 11.2);
-  assert.equal(findRow(result, 'joTeam').ratio, 16.8);
+  assert.equal(findRow(result, 'pat').ratio, 44.8);
+  assert.equal(findRow(result, 'investorReturn').ratio, 22.4);
+  assert.equal(findRow(result, 'sjTeamReturn').ratio, 22.4);
+  assert.equal(findRow(result, 'sjInterest').ratio, 8.96);
+  assert.equal(findRow(result, 'joTeam').ratio, 13.44);
 
   assert.deepEqual(result.rows.map((r) => r.key), [
-    'annualRate', 'balanceInterest', 'afterInsurance', 'tax',
-    'investorReturnGross', 'sjTeamReturn', 'investorReturnNet',
-    'sjInterest', 'joTeam',
+    'annualRate', 'balanceInterest', 'afterInsurance', 'tax', 'pat',
+    'investorReturn', 'sjTeamReturn', 'sjInterest', 'joTeam',
   ]);
-
-  assert.equal(findSummary(result, 'investor').yearly, 16800);
-  assert.equal(findSummary(result, 'investor').monthly, 1400);
-  assert.equal(findSummary(result, 'sj').yearly, 28000);
-  assert.equal(findSummary(result, 'sjMember').yearly, 11200);
-  assert.equal(findSummary(result, 'jo').yearly, 16800);
-
-  // "JO Member (after plug)" is intentionally left out of payoutSummary for now (see
-  // calc.js) — the owner asked to drop it from display but may want it back later.
-  assert.deepEqual(result.payoutSummary.map((r) => r.key), ['investor', 'sj', 'sjMember', 'jo']);
-
   assert.deepEqual(result.rows.map((r) => r.label), [
-    'Annual Rate', 'Balance Interest', 'After Insurance', 'Tax',
-    'Investor Return (Gross)', 'SJ Team Return', 'Investor Return (Net)',
-    'SJ Interest', 'JO Team',
+    'Annual Rate', 'Balance Interest', 'After Insurance', 'Tax', 'PAT',
+    'Investor Return', 'SJ Team Return', 'SJ Interest', 'JO Team',
   ]);
-  assert.deepEqual(result.payoutSummary.map((r) => r.label), [
-    'Investor', 'SJ', 'SJ Member', 'JO',
-  ]);
+
+  assert.equal(findSummary(result, 'investor').yearly, 22400);
+  assert.equal(findSummary(result, 'sj').yearly, 22400);
+  assert.equal(findSummary(result, 'sjMember').yearly, 8960);
+  assert.equal(findSummary(result, 'jo').yearly, 13440);
+  assert.deepEqual(result.payoutSummary.map((r) => r.key), ['investor', 'sj', 'sjMember', 'jo']);
+  assert.deepEqual(result.payoutSummary.map((r) => r.label), ['Investor', 'SJ', 'SJ Member', 'JO']);
 
   assert.equal(result.rootCause, null);
 });
@@ -65,7 +56,7 @@ test('Insurance Rate is a live input, not a hardcoded constant', () => {
   assert.equal(findRow(withHigherInsurance, 'afterInsurance').ratio, 55);
 });
 
-test('Investor Return / JO Rate auto-complements produce the correct split', () => {
+test('Investor Return / JO Rate auto-complements still produce the correct split from PAT', () => {
   const result = calculate({
     principal: 100000,
     monthlyRate: 5,
@@ -78,9 +69,9 @@ test('Investor Return / JO Rate auto-complements produce the correct split', () 
   });
 
   assert.equal(findRow(result, 'afterInsurance').ratio, 56);
-  assert.equal(findRow(result, 'investorReturnGross').ratio, 39.2);
+  assert.equal(findRow(result, 'pat').ratio, 56);
+  assert.equal(findRow(result, 'investorReturn').ratio, 39.2);
   assert.equal(findRow(result, 'sjTeamReturn').ratio, 16.8);
-  assert.equal(findRow(result, 'investorReturnNet').ratio, 39.2);
   assert.equal(findRow(result, 'sjInterest').ratio, 11.76);
   assert.equal(findRow(result, 'joTeam').ratio, 5.04);
 });
@@ -95,15 +86,17 @@ test('cost of fund exceeding annual rate flags balanceInterest as the root cause
   assert.match(result.rootCause.message, /Cost of Fund/);
 });
 
-test('a tax rate high enough flips investorReturnNet negative while sjTeamReturn stays positive', () => {
-  const result = calculate({ principal: 100000, monthlyRate: 5, period: 12, costOfFund: 3, insuranceRate: 1, taxRate: 60, investorReturnRate: 50, joRate: 60 });
+test('a tax rate over 100% flips PAT negative even though After Insurance is positive, reducing everyone', () => {
+  const result = calculate({ principal: 100000, monthlyRate: 5, period: 12, costOfFund: 3, insuranceRate: 1, taxRate: 150, investorReturnRate: 50, joRate: 60 });
 
   assert.equal(findRow(result, 'afterInsurance').ratio, 56);
-  assert.equal(findRow(result, 'investorReturnGross').ratio, 28);
-  assert.equal(findRow(result, 'investorReturnGross').negative, false);
-  assert.equal(findRow(result, 'investorReturnNet').ratio, -5.6);
-  assert.equal(findRow(result, 'sjTeamReturn').ratio, 28);
-  assert.equal(findRow(result, 'sjTeamReturn').negative, false);
-  assert.equal(result.rootCause.key, 'investorReturnNet');
+  assert.equal(findRow(result, 'afterInsurance').negative, false);
+  assert.equal(findRow(result, 'tax').ratio, 84);
+  assert.equal(findRow(result, 'pat').ratio, -28);
+  assert.equal(findRow(result, 'investorReturn').ratio, -14);
+  assert.equal(findRow(result, 'sjTeamReturn').ratio, -14);
+  assert.equal(findRow(result, 'sjTeamReturn').negative, true);
+
+  assert.equal(result.rootCause.key, 'pat');
   assert.match(result.rootCause.message, /Tax Rate/);
 });

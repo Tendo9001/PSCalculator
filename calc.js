@@ -44,8 +44,8 @@ const ROOT_CAUSE_ORDER = [
     message: 'Balance Interest is too low to cover the Insurance deduction, causing After Insurance to go negative.',
   },
   {
-    key: 'investorReturnNet',
-    message: 'Tax Rate is high enough to make Investor Return (Net) negative, even though Investor Return (Gross) is positive.',
+    key: 'pat',
+    message: 'Tax Rate is high enough to make PAT negative, even though After Insurance is positive.',
   },
 ];
 
@@ -62,11 +62,11 @@ function calculate({
   const annualRate = monthlyRate * period;
   const balanceInterest = annualRate - costOfFund;
   const afterInsurance = balanceInterest - insuranceRate;
-
-  const investorReturnGross = afterInsurance * (investorReturnRate / 100);
-  const sjTeamReturn = afterInsurance - investorReturnGross;
   const tax = afterInsurance * (taxRate / 100);
-  const investorReturnNet = investorReturnGross - tax;
+  const pat = afterInsurance - tax;
+
+  const investorReturn = pat * (investorReturnRate / 100);
+  const sjTeamReturn = pat - investorReturn;
 
   const sjInterest = sjTeamReturn * (1 - joRate / 100);
   const joTeam = sjTeamReturn * (joRate / 100);
@@ -76,9 +76,9 @@ function calculate({
     toRatioRow('balanceInterest', 'Balance Interest', balanceInterest, principal),
     toRatioRow('afterInsurance', 'After Insurance', afterInsurance, principal),
     toRatioRow('tax', 'Tax', tax, principal),
-    toRatioRow('investorReturnGross', 'Investor Return (Gross)', investorReturnGross, principal),
+    toRatioRow('pat', 'PAT', pat, principal),
+    toRatioRow('investorReturn', 'Investor Return', investorReturn, principal),
     toRatioRow('sjTeamReturn', 'SJ Team Return', sjTeamReturn, principal),
-    toRatioRow('investorReturnNet', 'Investor Return (Net)', investorReturnNet, principal),
     toRatioRow('sjInterest', 'SJ Interest', sjInterest, principal),
     toRatioRow('joTeam', 'JO Team', joTeam, principal),
   ];
@@ -90,7 +90,7 @@ function calculate({
   // const joMemberYearly = joTeamAmount / CONSTANTS.myTeamCount;
 
   const payoutSummary = [
-    toPayoutRow('investor', 'Investor', rows.find((r) => r.key === 'investorReturnNet').amount),
+    toPayoutRow('investor', 'Investor', rows.find((r) => r.key === 'investorReturn').amount),
     toPayoutRow('sj', 'SJ', rows.find((r) => r.key === 'sjTeamReturn').amount),
     toPayoutRow('sjMember', 'SJ Member', rows.find((r) => r.key === 'sjInterest').amount),
     toPayoutRow('jo', 'JO', joTeamAmount),
