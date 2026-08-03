@@ -1,21 +1,20 @@
-const inputIds = ['principal', 'monthlyRate', 'period', 'costOfFund', 'taxRate'];
+const inputIds = [
+  'principal',
+  'monthlyRate',
+  'period',
+  'costOfFund',
+  'insuranceRate',
+  'taxRate',
+  'investorReturnRate',
+  'joRate',
+];
 const inputs = Object.fromEntries(inputIds.map((id) => [id, document.getElementById(id)]));
-const sharedBreakdownEl = document.getElementById('sharedBreakdown');
-const myTeamBreakdownEl = document.getElementById('myTeamBreakdown');
-const investorBreakdownEl = document.getElementById('investorBreakdown');
-const tabMyTeamEl = document.getElementById('tabMyTeam');
-const tabInvestorEl = document.getElementById('tabInvestor');
-const resultCardEl = document.getElementById('resultCard');
-const resultLabelEl = document.getElementById('resultLabel');
-const resultValueEl = document.getElementById('resultValue');
+const breakdownEl = document.getElementById('breakdown');
+const summaryBodyEl = document.getElementById('summaryBody');
 const modalOverlay = document.getElementById('modalOverlay');
 const modalMessage = document.getElementById('modalMessage');
 const modalClose = document.getElementById('modalClose');
 
-const HIDDEN_ROW_KEYS = new Set(['teamBAmount']);
-
-let activeTab = 'myTeam';
-let lastResult = null;
 let shownRootCauseKey = null;
 
 function formatRM(amount) {
@@ -30,12 +29,9 @@ function formatPercent(ratio) {
   return `${ratio.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
 }
 
-function renderRows(container, rows) {
-  container.innerHTML = '';
+function renderRows(rows) {
+  breakdownEl.innerHTML = '';
   for (const row of rows) {
-    if (HIDDEN_ROW_KEYS.has(row.key)) {
-      continue;
-    }
     const rowEl = document.createElement('div');
     rowEl.className = 'breakdown-row' + (row.negative ? ' breakdown-row--negative' : '');
 
@@ -45,25 +41,31 @@ function renderRows(container, rows) {
 
     const valuesEl = document.createElement('span');
     valuesEl.className = 'breakdown-row__values';
-    valuesEl.textContent = row.ratio === undefined
-      ? formatRM(row.amount)
-      : `${formatPercent(row.ratio)} / ${formatRM(row.amount)}`;
+    valuesEl.textContent = `${formatPercent(row.ratio)} / ${formatRM(row.amount)}`;
 
     rowEl.append(labelEl, valuesEl);
-    container.append(rowEl);
+    breakdownEl.append(rowEl);
   }
 }
 
-function updateResultCard() {
-  if (!lastResult) {
-    return;
+function renderSummary(payoutSummary) {
+  summaryBodyEl.innerHTML = '';
+  for (const row of payoutSummary) {
+    const rowEl = document.createElement('tr');
+    rowEl.className = row.negative ? 'summary-row--negative' : '';
+
+    const labelCell = document.createElement('td');
+    labelCell.textContent = row.label;
+
+    const monthlyCell = document.createElement('td');
+    monthlyCell.textContent = formatRM(row.monthly);
+
+    const yearlyCell = document.createElement('td');
+    yearlyCell.textContent = formatRM(row.yearly);
+
+    rowEl.append(labelCell, monthlyCell, yearlyCell);
+    summaryBodyEl.append(rowEl);
   }
-  const row = activeTab === 'myTeam'
-    ? lastResult.myTeam.find((r) => r.key === 'monthlyPayout')
-    : lastResult.investor.find((r) => r.key === 'investorReturnNet');
-  resultLabelEl.textContent = activeTab === 'myTeam' ? 'MY Team Monthly Payout' : 'Investor Return (Net)';
-  resultValueEl.textContent = formatRM(row.amount);
-  resultCardEl.classList.toggle('card--result-negative', row.negative);
 }
 
 function openModal(message) {
@@ -75,43 +77,8 @@ function closeModal() {
   modalOverlay.hidden = true;
 }
 
-function maybeShowModal(hasAnyInput) {
-  const rootCause = lastResult ? lastResult.rootCause : null;
-
-  if (!hasAnyInput || !rootCause) {
-    closeModal();
-    shownRootCauseKey = null;
-    return;
-  }
-
-  const isRelevantNow = rootCause.scope === 'shared' || activeTab === 'investor';
-
-  if (!isRelevantNow) {
-    closeModal();
-    shownRootCauseKey = null;
-    return;
-  }
-
-  if (rootCause.key !== shownRootCauseKey) {
-    openModal(rootCause.message);
-    shownRootCauseKey = rootCause.key;
-  }
-}
-
 function hasAnyInputValue() {
   return inputIds.some((id) => inputs[id].value !== '');
-}
-
-function setActiveTab(tab) {
-  activeTab = tab;
-  tabMyTeamEl.classList.toggle('tab--active', tab === 'myTeam');
-  tabInvestorEl.classList.toggle('tab--active', tab === 'investor');
-  tabMyTeamEl.setAttribute('aria-selected', String(tab === 'myTeam'));
-  tabInvestorEl.setAttribute('aria-selected', String(tab === 'investor'));
-  myTeamBreakdownEl.hidden = tab !== 'myTeam';
-  investorBreakdownEl.hidden = tab !== 'investor';
-  updateResultCard();
-  maybeShowModal(hasAnyInputValue());
 }
 
 function sanitizePrincipalRaw(raw) {
@@ -200,13 +167,19 @@ function recalculate() {
     return;
   }
 
-  lastResult = calculate(values);
+  const result = calculate(values);
+  renderRows(result.rows);
+  renderSummary(result.payoutSummary);
 
-  renderRows(sharedBreakdownEl, lastResult.shared);
-  renderRows(myTeamBreakdownEl, lastResult.myTeam);
-  renderRows(investorBreakdownEl, lastResult.investor);
-  updateResultCard();
-  maybeShowModal(hasAnyInputValue());
+  const hasAnyInput = hasAnyInputValue();
+
+  if (!hasAnyInput || !result.rootCause) {
+    closeModal();
+    shownRootCauseKey = null;
+  } else if (result.rootCause.key !== shownRootCauseKey) {
+    openModal(result.rootCause.message);
+    shownRootCauseKey = result.rootCause.key;
+  }
 }
 
 inputs.principal.addEventListener('input', (event) => {
@@ -225,9 +198,6 @@ inputIds
   .filter((id) => id !== 'principal')
   .forEach((id) => inputs[id].addEventListener('input', recalculate));
 
-tabMyTeamEl.addEventListener('click', () => setActiveTab('myTeam'));
-tabInvestorEl.addEventListener('click', () => setActiveTab('investor'));
-
 modalClose.addEventListener('click', closeModal);
 modalOverlay.addEventListener('click', (event) => {
   if (event.target === modalOverlay) {
@@ -235,5 +205,4 @@ modalOverlay.addEventListener('click', (event) => {
   }
 });
 
-setActiveTab('myTeam');
 recalculate();
