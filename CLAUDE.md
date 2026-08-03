@@ -40,35 +40,40 @@ rootCause }`. There are no tabs — everything renders in one flat view.
 - `rows` — a flat array, in calculation order: Annual Rate, Balance
   Interest, After Insurance, Tax, PAT, Investor Return, SJ Team Return, SJ
   Interest, JO Team. Every row renders (no hidden rows).
-- **PAT is shown (`pat = afterInsurance - tax`, matching the spreadsheet),
-  but it is NOT the base of the Investor/SJ split — the Investor alone
-  bears the full cost of Tax.** `sjTeamReturn = afterInsurance * (1 -
-  investorReturnRate/100)` is fixed from the *pre-tax* `afterInsurance`, so
-  it (and everything derived from it: `sjInterest`, `joTeam`) never moves
-  when Tax Rate changes. `investorReturn = pat - sjTeamReturn` is a
-  residual — it absorbs 100% of whatever Tax removed from the pool. This
-  went through two reversals during development (see `docs/timeline.md`
-  2026-08-03 and 2026-08-06 entries) — the current state is the owner's
-  explicitly confirmed final answer: PAT is real and shown, but the split
-  itself must still protect SJ Team from Tax entirely. **Do not change
-  `sjTeamReturn` to be computed from `pat` instead of `afterInsurance`** —
-  that was tried, explicitly identified as wrong, and reverted.
+- **PAT (`pat = afterInsurance - tax`) is the base of the Investor/SJ
+  split. Both `investorReturn` (`pat * investorReturnRate/100`) and
+  `sjTeamReturn` (`pat - investorReturn`) are computed from PAT — Tax
+  Rate changes reduce both sides together, proportionally.** This is the
+  **confirmed final answer** as of 2026-08-06, after three rounds of
+  back-and-forth the same day (see `docs/timeline.md`'s 2026-08-03 and
+  three 2026-08-06 entries for the full history — it went
+  investor-bears-all-tax → both-bear-it-via-PAT → investor-bears-all-tax
+  again → both-bear-it-via-PAT again, this final time explicitly
+  double-confirmed with concrete numbers before implementing). **If asked
+  to change this again, treat it as a genuine new instruction, not a bug
+  report** — verify the requested formula with concrete numbers against
+  the owner before touching code, the same way this file's history did.
 - `payoutSummary` — a 4-role Monthly/Yearly table: Investor, SJ, SJ Member,
   JO ("JO Member (after plug)" is intentionally commented out in `calc.js`
   — see the comment there — not deleted). Each entry is `{ key, label,
   monthly, yearly, negative }`.
 - `insuranceRate`, `investorReturnRate`, and `joRate` are user inputs, not
-  hardcoded constants. `sjInterest` is always the auto-complement of JO
-  Rate (`sjTeamReturn * (1 - joRate/100)`) — there's no separate input for
-  it, specifically to avoid a split pair that could fail to sum to 100%.
-  `myTeamCount = 4` is the one remaining hardcoded constant (currently
-  unused now that JO Member is commented out).
+  hardcoded constants. `sjTeamReturn` is always the auto-complement of
+  Investor Return (`pat - investorReturn`); `sjInterest` is always the
+  auto-complement of JO Rate (`sjTeamReturn * (1 - joRate/100)`) — neither
+  has its own separate input, specifically to avoid a split pair that could
+  fail to sum to 100%. `myTeamCount = 4` is the one remaining hardcoded
+  constant (currently unused now that JO Member is commented out).
 - `rootCause` — `null`, or `{ key, message }`. Checked in order:
-  `annualRate` → `balanceInterest` → `afterInsurance` → `investorReturn`
-  (a high Tax Rate can flip `investorReturn` negative — even below the
-  point where `pat` itself goes negative, since `investorReturn` is `pat`
-  minus SJ Team's already-fixed cut — while `afterInsurance` and
-  `sjTeamReturn` stay positive throughout).
+  `annualRate` → `balanceInterest` → `afterInsurance` → `pat` (a Tax Rate
+  over 100% can flip `pat` negative even while `afterInsurance` stays
+  positive, which now drags `investorReturn` and `sjTeamReturn` negative
+  together).
+- If the deployed site ever appears to show numbers matching an *older*
+  formula than what's in this file, suspect **client-side caching** (a
+  phone browser holding a stale `calc.js`) before suspecting a deploy
+  failure — verify with `curl` against the live URL and/or `node -e` against
+  the local file with the same inputs before concluding anything is wrong.
 - In the breakdown, `Tax` always renders in red (`DEDUCTION_ROW_KEYS` in
   `script.js`) regardless of its computed sign, since it's conceptually a
   cost; every other row defaults to green (`--positive`) unless its value

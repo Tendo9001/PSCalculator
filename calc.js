@@ -44,8 +44,8 @@ const ROOT_CAUSE_ORDER = [
     message: 'Balance Interest is too low to cover the Insurance deduction, causing After Insurance to go negative.',
   },
   {
-    key: 'investorReturn',
-    message: 'Tax Rate is high enough to make Investor Return negative — the Investor bears the full cost of Tax, even though After Insurance and SJ Team Return are positive.',
+    key: 'pat',
+    message: 'Tax Rate is high enough to make PAT negative, even though After Insurance is positive.',
   },
 ];
 
@@ -65,11 +65,10 @@ function calculate({
   const tax = afterInsurance * (taxRate / 100);
   const pat = afterInsurance - tax;
 
-  // SJ Team's cut is fixed from the pre-tax After Insurance pool, so it never moves
-  // when Tax Rate changes. Investor Return is whatever's left of PAT after that
-  // fixed cut is paid out — so the Investor alone absorbs the full impact of Tax.
-  const sjTeamReturn = afterInsurance * (1 - investorReturnRate / 100);
-  const investorReturn = pat - sjTeamReturn;
+  // PAT (after Tax) is split between Investor and SJ Team by Investor Return Rate —
+  // both sides share the impact of Tax proportionally, not just the Investor.
+  const investorReturn = pat * (investorReturnRate / 100);
+  const sjTeamReturn = pat - investorReturn;
 
   const sjInterest = sjTeamReturn * (1 - joRate / 100);
   const joTeam = sjTeamReturn * (joRate / 100);
