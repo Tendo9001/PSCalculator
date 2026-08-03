@@ -40,34 +40,35 @@ rootCause }`. There are no tabs — everything renders in one flat view.
 - `rows` — a flat array, in calculation order: Annual Rate, Balance
   Interest, After Insurance, Tax, PAT, Investor Return, SJ Team Return, SJ
   Interest, JO Team. Every row renders (no hidden rows).
-- **Tax is deducted from the whole shared pool, before the Investor/SJ
-  split — not after it.** `tax = afterInsurance * (taxRate/100)`,
-  `pat = afterInsurance - tax`, and *both* `investorReturn` (`pat *
-  investorReturnRate/100`) and `sjTeamReturn` (`pat - investorReturn`) are
-  computed from `pat`. This means raising Tax Rate reduces the Investor,
-  SJ Team, SJ Interest, and JO Team figures together — there is no
-  investor-only tax isolation. (An earlier design — see
-  `docs/superpowers/specs/2026-08-03-investor-tax-split-design.md` — did
-  isolate tax to the Investor's share only; the owner explicitly reverted
-  that on 2026-08-06 in favor of this whole-pool PAT model, which matches
-  what their reference spreadsheet always computed. Don't "fix" this back
-  toward investor-only isolation — it was deliberately undone.)
+- **PAT is shown (`pat = afterInsurance - tax`, matching the spreadsheet),
+  but it is NOT the base of the Investor/SJ split — the Investor alone
+  bears the full cost of Tax.** `sjTeamReturn = afterInsurance * (1 -
+  investorReturnRate/100)` is fixed from the *pre-tax* `afterInsurance`, so
+  it (and everything derived from it: `sjInterest`, `joTeam`) never moves
+  when Tax Rate changes. `investorReturn = pat - sjTeamReturn` is a
+  residual — it absorbs 100% of whatever Tax removed from the pool. This
+  went through two reversals during development (see `docs/timeline.md`
+  2026-08-03 and 2026-08-06 entries) — the current state is the owner's
+  explicitly confirmed final answer: PAT is real and shown, but the split
+  itself must still protect SJ Team from Tax entirely. **Do not change
+  `sjTeamReturn` to be computed from `pat` instead of `afterInsurance`** —
+  that was tried, explicitly identified as wrong, and reverted.
 - `payoutSummary` — a 4-role Monthly/Yearly table: Investor, SJ, SJ Member,
   JO ("JO Member (after plug)" is intentionally commented out in `calc.js`
   — see the comment there — not deleted). Each entry is `{ key, label,
   monthly, yearly, negative }`.
 - `insuranceRate`, `investorReturnRate`, and `joRate` are user inputs, not
-  hardcoded constants. `sjTeamReturn` is always the auto-complement of
-  Investor Return (`pat - investorReturn`); `sjInterest` is always the
-  auto-complement of JO Rate (`sjTeamReturn * (1 - joRate/100)`) — neither
-  has its own separate input, specifically to avoid a split pair that could
-  fail to sum to 100%. `myTeamCount = 4` is the one remaining hardcoded
-  constant (currently unused now that JO Member is commented out).
+  hardcoded constants. `sjInterest` is always the auto-complement of JO
+  Rate (`sjTeamReturn * (1 - joRate/100)`) — there's no separate input for
+  it, specifically to avoid a split pair that could fail to sum to 100%.
+  `myTeamCount = 4` is the one remaining hardcoded constant (currently
+  unused now that JO Member is commented out).
 - `rootCause` — `null`, or `{ key, message }`. Checked in order:
-  `annualRate` → `balanceInterest` → `afterInsurance` → `pat` (a very high
-  Tax Rate, e.g. >100%, can flip `pat` negative even while `afterInsurance`
-  stays positive — this now affects everyone downstream, not just the
-  Investor).
+  `annualRate` → `balanceInterest` → `afterInsurance` → `investorReturn`
+  (a high Tax Rate can flip `investorReturn` negative — even below the
+  point where `pat` itself goes negative, since `investorReturn` is `pat`
+  minus SJ Team's already-fixed cut — while `afterInsurance` and
+  `sjTeamReturn` stay positive throughout).
 - In the breakdown, `Tax` always renders in red (`DEDUCTION_ROW_KEYS` in
   `script.js`) regardless of its computed sign, since it's conceptually a
   cost; every other row defaults to green (`--positive`) unless its value
