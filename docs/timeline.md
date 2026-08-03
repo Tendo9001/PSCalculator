@@ -189,6 +189,25 @@ a row's number actually goes negative. Added `white-space: nowrap` plus a
 horizontal-scroll fallback on the breakdown/summary containers so rows
 never wrap to a second line, which the owner said looked messy.
 
+**Reversal (2026-08-06): back to a PAT-based split.** The owner explicitly
+asked to undo the 2026-08-03 "tax borne only by the Investor" design (see
+that date's entry and `docs/superpowers/specs/
+2026-08-03-investor-tax-split-design.md`) in favor of what their
+spreadsheet always computed: `PAT = After Insurance − Tax` as its own
+visible row, with **both** Investor Return and SJ Team Return computed
+from PAT (`investorReturn = pat × investorReturnRate/100`,
+`sjTeamReturn = pat − investorReturn`) rather than from After Insurance
+directly. Confirmed explicitly before implementing, since it reverses a
+decision that took several rounds of clarification to reach and specifically undoes
+the "SJ Team is completely unaffected by tax" guarantee that used to be
+tested and true — raising Tax Rate now reduces Investor, SJ Team, SJ
+Interest, and JO Team together. The root-cause check gained `pat` back (a
+tax rate over 100% can flip PAT negative even while After Insurance stays
+positive), replacing the old investor-only `investorReturnNet` cause.
+"Investor Return (Gross)"/"(Net)" collapsed back into a single "Investor
+Return" row, since there's no longer a separate pre-tax/post-tax figure —
+tax happens before the split now, not after.
+
 ## Standing safety note
 
 During development, a headless-Chrome verification step once ran
