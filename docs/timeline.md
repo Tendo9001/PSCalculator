@@ -226,6 +226,37 @@ check's fourth candidate changed from `pat` to `investorReturn`, since
 Investor Return can go negative at a lower tax rate than PAT itself does
 (it's PAT minus SJ Team's fixed cut, a strictly smaller number).
 
+**Debugging detour, later the same day (2026-08-06):** the owner reported
+the live site's numbers didn't match "Investor bears all Tax" — their
+screenshots showed Investor Return and SJ Team Return exactly equal, which
+is what you'd get from splitting PAT evenly, not from the
+investor-absorbs-the-residual formula above. Verified with `curl` against
+the deployed `calc.js` and with `node -e` running the exact same inputs
+locally: **the deployed code was correct** and produced the
+investor-absorbs-it numbers, not the equal-split numbers in the
+screenshots. Concluded the owner's phone browser was showing a cached
+`calc.js` from before that day's earlier deploy, and advised a hard
+refresh / cache clear. Lesson for future sessions: when live behavior
+contradicts what the code should do, verify the actual deployed
+artifact (`curl`) and a local run with matching inputs *before* assuming
+the code is wrong — this project has no service worker or CDN of its own,
+but GitHub Pages responses can still be cached by the browser/network.
+
+**Final reversal, same day (2026-08-06):** after the cache explanation,
+the owner clarified that the "Investor bears all Tax" design was never
+actually what they wanted after all — the *original* PAT-based
+50/50-by-`investorReturnRate` split (the one from earlier the same day,
+undone by the "Immediate correction" entry above) was correct, and should
+stay. This was double-confirmed with concrete numbers
+(`PAT × investorReturnRate/100` for both sides) before implementing, given
+this was the third flip on the same question within one day. **This is the
+confirmed final state** — `sjTeamReturn` and `investorReturn` are both
+derived from `pat`, and Tax Rate changes affect both sides proportionally.
+The root-cause check's fourth candidate moved back to `pat`. See
+`CLAUDE.md`'s Data Flow section for the guidance left for future sessions:
+if asked to change this yet again, treat it as a genuine new instruction
+and re-verify with concrete numbers, not as "fixing" a bug.
+
 ## Standing safety note
 
 During development, a headless-Chrome verification step once ran
