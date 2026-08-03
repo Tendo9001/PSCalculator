@@ -208,6 +208,24 @@ positive), replacing the old investor-only `investorReturnNet` cause.
 Return" row, since there's no longer a separate pre-tax/post-tax figure —
 tax happens before the split now, not after.
 
+**Immediate correction, same day (2026-08-06):** the owner caught that the
+PAT-based split above contradicted "the Investor bears the cost of Tax" —
+if both Investor and SJ Team come from PAT, SJ Team is no longer protected
+from Tax, which is exactly the guarantee the 2026-08-03 design existed to
+provide. Reconciled both requirements: PAT is still shown as its own row
+(`pat = afterInsurance - tax`), but `sjTeamReturn` is computed from the
+*pre-tax* `afterInsurance` again (`afterInsurance * (1 -
+investorReturnRate/100)`) so it — and `sjInterest`/`joTeam` below it — never
+moves with Tax Rate. `investorReturn = pat - sjTeamReturn` is a residual
+that absorbs 100% of whatever Tax removed. Verified this reproduces the
+exact same numbers as the original 2026-08-03 design (e.g. Investor Return
+= 16.8% at the default rates, same as the old "Investor Return (Net)") —
+so the net effect of this whole two-step detour is: same math as before,
+plus a real PAT row now shown for the owner's reference. The root-cause
+check's fourth candidate changed from `pat` to `investorReturn`, since
+Investor Return can go negative at a lower tax rate than PAT itself does
+(it's PAT minus SJ Team's fixed cut, a strictly smaller number).
+
 ## Standing safety note
 
 During development, a headless-Chrome verification step once ran
