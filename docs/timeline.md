@@ -176,6 +176,19 @@ since the owner said they may want it back later. `calc.test.mjs`'s
 key/label assertions were updated to expect 4 payout summary rows instead
 of 5.
 
+**Follow-up adjustment (2026-08-05):** moved the `Tax` row to sit directly
+after `After Insurance` in the breakdown list (was previously after
+`Investor Return (Gross)`/`SJ Team Return`) — a pure display reorder, since
+`tax` is computed from `afterInsurance` and doesn't depend on
+`investorReturnGross` either way. Also introduced a semantic color scheme
+for the breakdown: rows representing a deduction/cost (currently just
+`Tax`) render in red (`--danger`) regardless of their computed sign, and
+all other rows default to a new green `--positive` color instead of the
+plain text color — red-for-negative-value styling still overrides both when
+a row's number actually goes negative. Added `white-space: nowrap` plus a
+horizontal-scroll fallback on the breakdown/summary containers so rows
+never wrap to a second line, which the owner said looked messy.
+
 ## Standing safety note
 
 During development, a headless-Chrome verification step once ran
