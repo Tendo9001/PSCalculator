@@ -11,8 +11,8 @@ Pages: https://tendo9001.github.io/PSCalculator/
 
 - `calc.js` — pure calculation engine, no DOM access.
 - `script.js` — DOM wiring: renders `calc.js`'s output (the flat breakdown
-  and the Payout Summary table) into the page, handles the negative-value
-  warning modal, and Principal's live thousands-separator input formatting.
+  and the Payout Summary table) into the page, handles the inline warning
+  banner, and Principal's live thousands-separator input formatting.
 - `index.html` / `styles.css` — markup and the dark "trading terminal"
   theme (background `#0b0d0c`, accent `#d9a441`).
 - `manifest.json` + `icons/` — PWA metadata, no service worker.
@@ -55,11 +55,22 @@ rootCause }`. There are no tabs — everything renders in one flat view.
   — neither has its own separate input, specifically to avoid a split pair
   that could fail to sum to 100%. `myTeamCount = 4` is the one remaining
   hardcoded constant.
-- `rootCause` — `null`, or `{ key, message }`. Opens the warning modal
-  whenever it's non-null and at least one input has a value; no
-  view-scoping logic exists since there's only one view. See `script.js`'s
-  `recalculate` for the exact gating (no-spam-on-keystroke, no-modal-on-
-  empty-load).
+- `rootCause` — `null`, or `{ key, message }`.
+
+There is no popup/modal — warnings are an inline red banner
+(`#warningBanner`/`#warningMessage`) that's just shown or hidden based on
+current state, not a dismissible dialog (a popup was tried and explicitly
+rejected as "annoying"; don't reintroduce one). `script.js`'s `recalculate`
+picks the banner's message with this priority: (1) if Insurance Rate,
+Investor Return, or JO Rate is left blank while any Deal Terms field has a
+value, warn that those default to 0% — this is checked from the raw input
+`.value` strings (`getMissingRateWarning`), not from `calc.js`'s output,
+since `calc.js` only ever sees numbers (empty string is coerced to `0`
+before `calculate()` is called); (2) otherwise, if `rootCause` is non-null
+and at least one input has a value anywhere, show its message; (3)
+otherwise hide the banner. No keystroke-spam or empty-load-warning
+guarding is needed beyond that priority check, since the banner isn't
+interruptive — it just reflects current state.
 
 ## Critical: `calc.js` must stay a classic script, not an ES module
 

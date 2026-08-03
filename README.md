@@ -1,19 +1,24 @@
 # Profit Split Calculator
 
 A small, personal, pure front-end PWA that live-computes a profit-split
-calculation chain and shows the result from two different perspectives.
+calculation chain and shows a full breakdown plus a Monthly/Yearly payout
+summary.
 
 **Live site:** https://tendo9001.github.io/PSCalculator/
 
 ## What it does
 
-- Enter Principal, Monthly Rate, Period, Cost of Fund, and Tax Rate.
-- A shared breakdown (Annual Rate, Balance Interest, After Takaful) updates
-  live as you type — no submit button.
-- Two tabs show the result from two perspectives: **MY Team** (default) and
-  **Investor**.
-- If any step goes negative, the affected rows turn red and a popup
-  explains which input caused it.
+- Two input cards: **Deal Terms** (Principal, Monthly Rate, Period, Cost of
+  Fund) and **Adjustable Rates** (Insurance Rate, Tax Rate, Investor Return,
+  JO Rate).
+- A single breakdown list (Annual Rate through JO Team) updates live as you
+  type — no submit button.
+- A **Payout Summary** table shows Monthly and Yearly payout for five
+  roles: Investor, SJ, SJ Member, JO, JO Member (after plug).
+- If any step goes negative, the affected rows turn red and an inline
+  warning banner explains which input caused it. The same banner also warns
+  if Insurance Rate, Investor Return, or JO Rate is left empty (they default
+  to 0%, which is usually not what you want).
 - Installable as a PWA — "Add to Home Screen" on mobile.
 
 ## Tech
@@ -53,7 +58,7 @@ PSCalculator/
 ├── styles.css                  Dark theme styling
 ├── calc.js                     Calculation engine (pure function, no DOM)
 ├── calc.test.mjs               Tests for calc.js
-├── script.js                   DOM wiring: rendering, tabs, input formatting
+├── script.js                   DOM wiring: rendering, warning banner, input formatting
 ├── manifest.json                PWA manifest
 ├── icons/                       PWA icons
 ├── scripts/generate_icons.py   Icon-generation script (dev-only)

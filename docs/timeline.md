@@ -112,6 +112,61 @@ UI polish: the tab buttons were changed from an underlined-text style to a
 filled/outlined button style, after the owner pointed out the original
 style didn't read as clickable.
 
+## 2026-08-04 — Adjustable rates, JO rename, tabs removed, Payout Summary
+
+The project owner shared a further-updated `Book2.xlsx`. Renamed "Takaful"
+to "Insurance" and marked several previously-hardcoded splits
+"(rate adjustable)"; added a new Monthly/Yearly payout summary table for
+five roles (Investor, SJ, SJ Member, JO, JO Member); used "JO" everywhere
+the app had said "MY".
+
+Confirmed with the owner before touching code: the spreadsheet's
+`Investor Return`/`SJ Team Return` formulas are literally `PAT × rate`
+(both from the shared post-tax pool) — this was true from the very first
+version of the spreadsheet, not a new edit, and the owner explicitly
+re-confirmed the app's actual business logic (tax borne only by the
+Investor, computed after the split) should stay as-is. Only labels and
+which values are user-adjustable came from the new spreadsheet. See
+`docs/superpowers/specs/2026-08-04-adjustable-rates-and-payout-summary-design.md`.
+
+Changes, via a written spec → plan → Subagent-Driven Development execution
+(3 implementation tasks + a final whole-branch review):
+
+- `Insurance Rate`, `Investor Return`, and `JO Rate` became user inputs,
+  replacing hardcoded constants. Rather than two independently-editable
+  inputs per split (which could fail to sum to 100%, a footgun the
+  spreadsheet itself has), each pairing has one input with the other side
+  as an automatic complement: SJ Team Return = `100% − Investor Return`;
+  SJ Interest = `100% − JO Rate`. `myTeamCount = 4` is the one constant
+  left hardcoded — the spreadsheet never marks it adjustable.
+- Inputs split into two cards: "Deal Terms" (the original four) and
+  "Adjustable Rates" (the four new/moved ones), per the owner's explicit
+  request to separate them visually.
+- **The MY Team / Investor tab design from the previous day was undone.**
+  The owner decided they no longer wanted the split-tab view; everything
+  is one flat breakdown list again, followed by the new Payout Summary
+  table (which became the de facto "final result" section, replacing the
+  single highlighted result card).
+- The final whole-branch review caught two real gaps neither task-level
+  review could see: `README.md` still described the now-removed tab design
+  (fixed), and the three new rate inputs had no default values — leaving
+  them blank silently computed a 0%-rate result with no warning at all,
+  turning the previously-safe "just fill in Deal Terms" workflow into
+  silently wrong output.
+- **Follow-up UX decision from the owner in response to that gap:**
+  instead of adding default values, replace the popup warning modal
+  entirely with a **non-interruptive inline warning banner** (a red box
+  below the input cards, not a dismissible dialog) — used both for the
+  existing negative-value root-cause messages and a new message when
+  Insurance Rate/Investor Return/JO Rate is left blank while the Deal Terms
+  card has been started. The owner's stated reason: repeated popups were
+  "annoying"; a banner just reflects current state without interrupting.
+- Also fixed while addressing the review: added a mobile `overflow-x`
+  safeguard for the Payout Summary table (a 3-column monospace table risked
+  overflowing narrow phone screens), and added label-string assertions to
+  `calc.test.mjs` (only key order was tested before, not the actual label
+  text, even though relabeling was half the point of this change).
+
 ## Standing safety note
 
 During development, a headless-Chrome verification step once ran
