@@ -14,6 +14,7 @@
     <h1 class="app__title">Profit Split Calculator</h1>
 
     <section class="card card--inputs">
+      <h2 class="card__heading">Deal Terms</h2>
       <div class="field">
         <label for="principal">Principal (RM)</label>
         <input type="text" id="principal" inputmode="decimal" autocomplete="off" placeholder="0.00" />
@@ -30,28 +31,45 @@
         <label for="costOfFund">Cost of Fund (%)</label>
         <input type="number" id="costOfFund" inputmode="decimal" step="any" placeholder="0.00" />
       </div>
-      <div class="field field--full">
+    </section>
+
+    <section class="card card--inputs">
+      <h2 class="card__heading">Adjustable Rates</h2>
+      <div class="field">
+        <label for="insuranceRate">Insurance Rate (%)</label>
+        <input type="number" id="insuranceRate" inputmode="decimal" step="any" placeholder="0.00" />
+      </div>
+      <div class="field">
         <label for="taxRate">Tax Rate (%)</label>
         <input type="number" id="taxRate" inputmode="decimal" step="any" placeholder="0.00" />
+      </div>
+      <div class="field">
+        <label for="investorReturnRate">Investor Return (%)</label>
+        <input type="number" id="investorReturnRate" inputmode="decimal" step="any" placeholder="0.00" />
+      </div>
+      <div class="field">
+        <label for="joRate">JO Rate (%)</label>
+        <input type="number" id="joRate" inputmode="decimal" step="any" placeholder="0.00" />
       </div>
     </section>
 
     <section class="card card--breakdown">
       <h2 class="card__heading">Breakdown</h2>
-      <div class="breakdown" id="sharedBreakdown"></div>
-
-      <div class="tabs" role="tablist">
-        <button type="button" class="tab tab--active" id="tabMyTeam" role="tab" aria-selected="true">MY Team</button>
-        <button type="button" class="tab" id="tabInvestor" role="tab" aria-selected="false">Investor</button>
-      </div>
-
-      <div class="breakdown" id="myTeamBreakdown"></div>
-      <div class="breakdown" id="investorBreakdown" hidden></div>
+      <div class="breakdown" id="breakdown"></div>
     </section>
 
-    <section class="card card--result" id="resultCard">
-      <span class="result__label" id="resultLabel">MY Team Monthly Payout</span>
-      <span class="result__value" id="resultValue">RM 0.00</span>
+    <section class="card card--summary">
+      <h2 class="card__heading">Payout Summary</h2>
+      <table class="summary-table">
+        <thead>
+          <tr>
+            <th>Role</th>
+            <th>Monthly Payout (PAT)</th>
+            <th>Yearly Payout (PAT)</th>
+          </tr>
+        </thead>
+        <tbody id="summaryBody"></tbody>
+      </table>
     </section>
   </main>
 
