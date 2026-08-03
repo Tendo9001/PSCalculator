@@ -20,6 +20,7 @@ const RATE_LABELS = {
   investorReturnRate: 'Investor Return',
   joRate: 'JO Rate',
 };
+const DEDUCTION_ROW_KEYS = new Set(['tax']);
 
 function formatRM(amount) {
   const formatted = amount.toLocaleString('en-US', {
@@ -37,7 +38,8 @@ function renderRows(rows) {
   breakdownEl.innerHTML = '';
   for (const row of rows) {
     const rowEl = document.createElement('div');
-    rowEl.className = 'breakdown-row' + (row.negative ? ' breakdown-row--negative' : '');
+    const isRed = row.negative || DEDUCTION_ROW_KEYS.has(row.key);
+    rowEl.className = 'breakdown-row' + (isRed ? ' breakdown-row--negative' : '');
 
     const labelEl = document.createElement('span');
     labelEl.className = 'breakdown-row__label';

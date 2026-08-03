@@ -30,8 +30,8 @@ test('all-positive chain at default rates matches the pre-adjustable-rates numbe
   assert.equal(findRow(result, 'joTeam').ratio, 16.8);
 
   assert.deepEqual(result.rows.map((r) => r.key), [
-    'annualRate', 'balanceInterest', 'afterInsurance',
-    'investorReturnGross', 'sjTeamReturn', 'tax', 'investorReturnNet',
+    'annualRate', 'balanceInterest', 'afterInsurance', 'tax',
+    'investorReturnGross', 'sjTeamReturn', 'investorReturnNet',
     'sjInterest', 'joTeam',
   ]);
 
@@ -46,8 +46,8 @@ test('all-positive chain at default rates matches the pre-adjustable-rates numbe
   assert.deepEqual(result.payoutSummary.map((r) => r.key), ['investor', 'sj', 'sjMember', 'jo']);
 
   assert.deepEqual(result.rows.map((r) => r.label), [
-    'Annual Rate', 'Balance Interest', 'After Insurance',
-    'Investor Return (Gross)', 'SJ Team Return', 'Tax', 'Investor Return (Net)',
+    'Annual Rate', 'Balance Interest', 'After Insurance', 'Tax',
+    'Investor Return (Gross)', 'SJ Team Return', 'Investor Return (Net)',
     'SJ Interest', 'JO Team',
   ]);
   assert.deepEqual(result.payoutSummary.map((r) => r.label), [
